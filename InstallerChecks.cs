@@ -14,18 +14,11 @@ class InstallerChecks
     static void Reject(Action action, string description) { bool rejected = false; try { action(); } catch (InvalidOperationException) { rejected = true; } Assert(rejected, description); }
     static string TargetOf(string path)
     {
-        object shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")), link = null;
-        try { link = shell.GetType().InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { path }); return (string)link.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, link, null); }
-        finally { if (link != null) Marshal.FinalReleaseComObject(link); Marshal.FinalReleaseComObject(shell); }
+        return ShortcutFiles.TargetOf(path);
     }
     static void OtherShortcut(string path, string target)
     {
-        object shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")), link = null;
-        try {
-            link = shell.GetType().InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { path });
-            link.GetType().InvokeMember("TargetPath", BindingFlags.SetProperty, null, link, new object[] { target });
-            link.GetType().InvokeMember("Save", BindingFlags.InvokeMethod, null, link, null);
-        } finally { if (link != null) Marshal.FinalReleaseComObject(link); Marshal.FinalReleaseComObject(shell); }
+        ShortcutFiles.Write(path, target, Path.GetDirectoryName(target), "Unrelated shortcut fixture", null);
     }
     [STAThread] static int Main(string[] args)
     {
@@ -40,6 +33,7 @@ class InstallerChecks
         };
         try
         {
+            Assert(Installer.LinkName=="Codex \u00b7 \u542f\u52a8\u52a8\u753b.lnk", "Chinese shortcut name is preserved independently of system locale");
             CodexInstall[] real = Installer.DiscoverCodex();
             Console.WriteLine("Actual Codex discovery: " + real.Length + " installation(s)");
             foreach (var app in real) Assert(app.AppId.Contains("!") && Directory.Exists(app.PackageRoot), "real application id and installation path are valid");

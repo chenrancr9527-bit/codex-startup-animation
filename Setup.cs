@@ -169,55 +169,24 @@ ConvertTo-Json -InputObject @($items) -Compress
             File.WriteAllText(Inside(context.Root, "install-manifest.json"), Json.Serialize(new { Product = "CodexStartupAnimation", Version = Version, Root = Path.GetFullPath(context.Root) }), new UTF8Encoding(true));
         }
 
-        static object CreateShell() { return Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell", true)); }
-        static object Shortcut(object shell, string path) { return shell.GetType().InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { path }); }
-        static void Set(object link, string property, string value) { link.GetType().InvokeMember(property, BindingFlags.SetProperty, null, link, new object[] { value }); }
         static void EnsureShortcutAvailable(string path, string root)
         {
             if (!File.Exists(path)) return;
-            object shell = CreateShell(), link = null;
-            try
-            {
-                link = Shortcut(shell, path);
-                string existing = (string)link.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, link, null);
-                if (!string.Equals(existing, Path.Combine(root, "Codex-启动动画.exe"), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("同名快捷方式已用于另一个程序，请先为它改名后重试。");
-            }
-            finally { if (link != null) Marshal.FinalReleaseComObject(link); Marshal.FinalReleaseComObject(shell); }
+            string existing = ShortcutFiles.TargetOf(path);
+            if (!string.Equals(existing, Path.Combine(root, "Codex-启动动画.exe"), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("同名快捷方式已用于另一个程序，请先为它改名后重试。");
         }
         static void CreateShortcut(string path, string root)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            object shell = CreateShell(), link = null;
-            try
-            {
-                // A similarly named shortcut to another program remains untouched.
-                if (File.Exists(path))
-                {
-                    link = Shortcut(shell, path);
-                    string existing = (string)link.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, link, null);
-                    if (!string.Equals(existing, Path.Combine(root, "Codex-启动动画.exe"), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("同名快捷方式已用于另一个程序，请先为它改名后重试。");
-                    Marshal.FinalReleaseComObject(link); link = null;
-                }
-                link = Shortcut(shell, path);
-                Set(link, "TargetPath", Path.Combine(root, "Codex-启动动画.exe")); Set(link, "WorkingDirectory", root);
-                Set(link, "Description", "AI改变世界 · 全屏后台加载 Codex");
-                Set(link, "IconLocation", Path.Combine(root, File.Exists(Path.Combine(root, "Codex.ico")) ? "Codex.ico" : "Companion.ico") + ",0");
-                link.GetType().InvokeMember("Save", BindingFlags.InvokeMethod, null, link, null);
-            }
-            finally { if (link != null) Marshal.FinalReleaseComObject(link); Marshal.FinalReleaseComObject(shell); }
+            EnsureShortcutAvailable(path, root);
+            ShortcutFiles.Write(path, Path.Combine(root, "Codex-启动动画.exe"), root, "AI改变世界 · 全屏后台加载 Codex", Path.Combine(root, File.Exists(Path.Combine(root, "Codex.ico")) ? "Codex.ico" : "Companion.ico"));
         }
 
         static void RemoveShortcutIfOwned(string path, string root)
         {
             if (!File.Exists(path)) return;
-            object shell = CreateShell(), link = null;
-            try
-            {
-                link = Shortcut(shell, path);
-                string target = (string)link.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, link, null);
-                if (string.Equals(target, Path.Combine(root, "Codex-启动动画.exe"), StringComparison.OrdinalIgnoreCase)) File.Delete(path);
-            }
-            finally { if (link != null) Marshal.FinalReleaseComObject(link); Marshal.FinalReleaseComObject(shell); }
+            string target = ShortcutFiles.TargetOf(path);
+            if (string.Equals(target, Path.Combine(root, "Codex-启动动画.exe"), StringComparison.OrdinalIgnoreCase)) File.Delete(path);
         }
 
         public static string Uninstall(InstallContext context)

@@ -8,7 +8,7 @@ if (-not (Test-Path -LiteralPath $compiler)) { throw '.NET Framework x64 C# comp
 New-Item -ItemType Directory -Path $appRoot -Force | Out-Null
 $refs = @('/r:System.Xaml.dll', ('/r:' + (Join-Path $frameworkRoot 'WPF\PresentationCore.dll')), ('/r:' + (Join-Path $frameworkRoot 'WPF\PresentationFramework.dll')), ('/r:' + (Join-Path $frameworkRoot 'WPF\WindowsBase.dll')))
 $sources = @('Launcher.cs', 'Scene.cs', 'Startup.cs', 'AssemblyInfo.cs') | ForEach-Object { Join-Path $projectRoot $_ }
-$common = @('/nologo', '/utf8output', '/target:winexe', '/platform:x64', '/optimize+', ('/win32icon:' + (Join-Path $projectRoot 'Companion.ico')), ('/win32manifest:' + (Join-Path $projectRoot 'app.manifest')))
+$common = @('/nologo', '/utf8output', '/codepage:65001', '/target:winexe', '/platform:x64', '/optimize+', ('/win32icon:' + (Join-Path $projectRoot 'Companion.ico')), ('/win32manifest:' + (Join-Path $projectRoot 'app.manifest')))
 & $compiler @common ('/out:' + (Join-Path $appRoot 'Codex-启动动画.exe')) @refs @sources
 if ($LASTEXITCODE -ne 0) { throw 'Launcher build failed.' }
 & $compiler @common /define:PREVIEW ('/out:' + (Join-Path $appRoot '只看动画.exe')) @refs @sources
@@ -26,7 +26,7 @@ try {
     }
 } finally { $zip.Dispose() }
 $setup = Join-Path $distRoot 'CodexStartupSetup.exe'
-& $compiler @common ('/out:' + $setup) /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Web.Extensions.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll ('/resource:' + $payload + ',Companion.Payload') (Join-Path $projectRoot 'Setup.cs') (Join-Path $projectRoot 'AssemblyInfo.cs')
+& $compiler @common ('/out:' + $setup) /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Web.Extensions.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll ('/resource:' + $payload + ',Companion.Payload') (Join-Path $projectRoot 'Setup.cs') (Join-Path $projectRoot 'Shortcuts.cs') (Join-Path $projectRoot 'AssemblyInfo.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
 $shareRoot = Join-Path $distRoot 'share'
 New-Item -ItemType Directory -Path $shareRoot -Force | Out-Null
