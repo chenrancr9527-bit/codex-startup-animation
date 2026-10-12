@@ -1,0 +1,9 @@
+dist/
+test-output/
+*.pdb
+*.user
+.vs/
+OpenAI-logo.png
+Codex.ico
+install-manifest.json
+启动设置.ini

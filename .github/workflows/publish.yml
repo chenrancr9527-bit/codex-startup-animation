@@ -1,0 +1,32 @@
+name: Build and publish installer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-installer
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build installer
+        shell: powershell
+        run: .\build.ps1
+      - name: Verify install, upgrade and uninstall
+        shell: powershell
+        run: .\test.ps1
+      - name: Publish verified release assets
+        shell: powershell
+        run: .\publish.ps1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
