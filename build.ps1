@@ -15,6 +15,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Launcher build failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Preview build failed.' }
 Copy-Item -LiteralPath (Join-Path $projectRoot 'Startup.wav') -Destination (Join-Path $appRoot '启动音.wav') -Force
 foreach ($file in @('Companion.ico', 'README.md', 'LICENSE')) { Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $appRoot -Force }
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $payload = Join-Path $distRoot 'payload.zip'
 if (Test-Path -LiteralPath $payload) { Remove-Item -LiteralPath $payload -Force }
